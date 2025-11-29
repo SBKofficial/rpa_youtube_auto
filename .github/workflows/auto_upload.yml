@@ -1,0 +1,50 @@
+name: Auto YouTube Batch Upload
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+
+jobs:
+  batch-upload:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Restore client_secret.json
+        run: |
+          echo "${{ secrets.CLIENT_SECRET_JSON_B64 }}" | base64 --decode > client_secret.json
+        env:
+          CLIENT_SECRET_JSON_B64: ${{ secrets.CLIENT_SECRET_JSON_B64 }}
+
+      - name: Restore token.json
+        run: |
+          if [ -n "${{ secrets.YOUTUBE_TOKEN_JSON_B64 }}" ]; then
+            echo "${{ secrets.YOUTUBE_TOKEN_JSON_B64 }}" | base64 --decode > token.json
+          fi
+        env:
+          YOUTUBE_TOKEN_JSON_B64: ${{ secrets.YOUTUBE_TOKEN_JSON_B64 }}
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run auto batch (2 videos)
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          python auto_batch.py --count 2
+
+      - name: Upload logs
+        uses: actions/upload-artifact@v4
+        with:
+          name: auto_upload_logs
+          path: ./logs || true
