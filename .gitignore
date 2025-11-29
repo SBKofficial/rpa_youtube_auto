@@ -1,0 +1,7 @@
+media/
+client_secret.json
+token.json
+rpa_state.db
+__pycache__/
+*.pyc
+.env
